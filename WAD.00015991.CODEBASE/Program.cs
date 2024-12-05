@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WAD._00015991.CODEBASE.Data;
+using WAD._00015991.CODEBASE.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSingleton<FitnessActivitySingletonService>(serviceProvider =>
+    FitnessActivitySingletonService.CreateInstance(serviceProvider));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

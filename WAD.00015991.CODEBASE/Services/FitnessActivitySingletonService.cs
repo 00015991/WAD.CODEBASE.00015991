@@ -1,4 +1,6 @@
-﻿using WAD._00015991.CODEBASE.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using WAD._00015991.CODEBASE.Data;
+using WAD._00015991.CODEBASE.Models;
 
 namespace WAD._00015991.CODEBASE.Services
 {
@@ -6,38 +8,62 @@ namespace WAD._00015991.CODEBASE.Services
     public class FitnessActivitySingletonService
     {
         private static FitnessActivitySingletonService? _instance;
-        private readonly List<FitnessActivity> _activities;
+        private readonly IServiceProvider _serviceProvider;
 
-        // Private constructor to prevent direct instantiation
-        private FitnessActivitySingletonService()
+        private FitnessActivitySingletonService(IServiceProvider serviceProvider)
         {
-            _activities = new List<FitnessActivity>();
+            _serviceProvider = serviceProvider;
         }
 
-        // Public method to get the single instance
-        public static FitnessActivitySingletonService Instance
+        public static FitnessActivitySingletonService CreateInstance(IServiceProvider serviceProvider)
         {
-            get
+            if (_instance == null)
             {
-                if (_instance == null)
-                {
-                    _instance = new FitnessActivitySingletonService();
-                }
-                return _instance;
+                _instance = new FitnessActivitySingletonService(serviceProvider);
             }
+            return _instance;
         }
 
         // Methods to manage fitness activities
-        public IEnumerable<FitnessActivity> GetAllActivities() => _activities;
-
-        public void AddActivity(FitnessActivity activity) => _activities.Add(activity);
-
-        public void RemoveActivity(int id)
+        public async Task<IEnumerable<FitnessActivity>> GetAllActivitiesAsync()
         {
-            var activity = _activities.FirstOrDefault(a => a.Id == id);
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            return await context.FitnessActivities.ToListAsync();
+        }
+
+        public async Task<FitnessActivity?> GetActivityByIdAsync(int id)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            return await context.FitnessActivities.FindAsync(id);
+        }
+
+        public async Task AddActivityAsync(FitnessActivity activity)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            context.FitnessActivities.Add(activity);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task UpdateActivityAsync(FitnessActivity activity)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            context.FitnessActivities.Update(activity);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task DeleteActivityAsync(int id)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var activity = await context.FitnessActivities.FindAsync(id);
             if (activity != null)
             {
-                _activities.Remove(activity);
+                context.FitnessActivities.Remove(activity);
+                await context.SaveChangesAsync();
             }
         }
     }
